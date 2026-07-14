@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>.rh Phase-1 ENS — Robinhood Chain</title>
+  <script>
+    try {
+      var t = localStorage.getItem("rh-theme");
+      if (t !== "light" && t !== "dark") t = "dark";
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
+  <style>
+    :root, [data-theme="dark"] {
+      --bg: #0b0f14; --panel: #121821; --border: #1e2a38; --text: #e7eef7;
+      --muted: #8fa3b8; --accent: #00c805; --accent2: #3d8bfd; --danger: #ff6b6b;
+      --phase: #9b7bff; --warn: #ffcc66; --header: #0b0f14cc;
+    }
+    [data-theme="light"] {
+      --bg: #f4f7fb; --panel: #ffffff; --border: #e2e8f0; --text: #0f172a;
+      --muted: #64748b; --accent: #059669; --accent2: #2563eb; --danger: #dc2626;
+      --phase: #7c3aed; --warn: #d97706; --header: #fffffff2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #1a0f3d55, transparent),
+        radial-gradient(900px 500px at 100% 0%, #0b2a4a55, transparent),
+        var(--bg);
+      color: var(--text); min-height: 100vh;
+    }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px); position: sticky; top: 0; background: var(--header);
+      gap: .75rem; flex-wrap: wrap;
+    }
+    a.brand {
+      font-weight: 700; display: flex; gap: .5rem; align-items: center;
+      text-decoration: none; color: var(--text);
+    }
+    a.brand:hover { color: var(--accent); }
+    .brand-logo {
+      width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border);
+    }
+    .brand span.rh { color: var(--accent); }
+    .nav { display: flex; gap: .4rem; align-items: center; }
+    .nav a {
+      font-size: .8rem; text-decoration: none; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 999px; padding: .3rem .7rem;
+    }
+    .nav a.active { color: var(--phase); border-color: #4a3a88; background: #15102a; }
+    .nav a:hover { color: var(--text); }
+    main { max-width: 980px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    h1 { font-size: 1.75rem; margin: 0 0 .35rem; }
+    .sub { color: var(--muted); margin-bottom: 1.5rem; line-height: 1.45; }
+    .grid { display: grid; gap: 1rem; }
+    @media (min-width: 760px) { .grid.two { grid-template-columns: 1fr 1fr; } }
+    .card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.1rem 1.15rem;
+    }
+    .card h2 { margin: 0 0 .75rem; font-size: 1rem; color: #cfe0f2; }
+    label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .35rem; }
+    .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+    .field { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .65rem; }
+    input, select, textarea {
+      flex: 1; min-width: 0; background: #0a1018; border: 1px solid var(--border);
+      color: var(--text); border-radius: 10px; padding: .7rem .8rem; font-size: 1rem;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus { outline: 1px solid var(--phase); }
+    button {
+      background: var(--phase); color: #120c22; border: 0; border-radius: 10px;
+      font-weight: 700; padding: .7rem 1rem; cursor: pointer; white-space: nowrap;
+    }
+    button.secondary { background: #1a2634; color: var(--text); border: 1px solid var(--border); }
+    button.accent { background: var(--accent); color: #041206; }
+    button.tiny { padding: .4rem .65rem; font-size: .8rem; }
+    button.icon {
+      width: 2.1rem; height: 2.1rem; padding: 0; border-radius: 999px;
+      background: var(--panel); color: var(--text); border: 1px solid var(--border);
+      font-size: 1rem; line-height: 1;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .pill {
+      font-size: .75rem; padding: .25rem .55rem; border-radius: 999px;
+      border: 1px solid var(--border); color: var(--muted);
+    }
+    .pill.ok { color: var(--accent); border-color: #145c28; background: #0a1f12; }
+    .pill.phase { color: var(--phase); border-color: #4a3a88; background: #15102a; }
+    .pill.warn { color: var(--warn); border-color: #665522; background: #1a1608; }
+    .result {
+      margin-top: .85rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .85rem; white-space: pre-wrap; color: #b8c9db;
+      background: #0a1018; border-radius: 10px; padding: .75rem; border: 1px solid var(--border);
+      min-height: 3rem;
+    }
+    .prices { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
+    footer { margin-top: 2rem; color: var(--muted); font-size: .8rem; line-height: 1.5; }
+    a { color: var(--accent2); }
+    .err { color: var(--danger); }
+    .ok { color: var(--accent); }
+    .hint { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+    .steps { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .75rem; }
+    .steps .pill { font-family: ui-monospace, monospace; }
+    code { font-size: .78rem; word-break: break-all; }
+
+    /* Commit countdown */
+    .countdown {
+      margin-top: .75rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .65rem .75rem;
+      background: #0a1018;
+    }
+    .countdown.idle { opacity: .85; }
+    .countdown.ready { border-color: #145c28; background: #0a1f12; }
+    .countdown.warn { border-color: #665522; background: #1a1608; }
+    .countdown.expired { border-color: #662222; background: #1a0a0a; }
+    .countdown-label {
+      font-size: .85rem; margin-bottom: .45rem; color: #d5e2f0;
+      font-variant-numeric: tabular-nums;
+    }
+    .countdown.ready .countdown-label { color: var(--accent); }
+    .countdown.warn .countdown-label { color: var(--warn); }
+    .countdown.expired .countdown-label { color: var(--danger); }
+    .countdown-track {
+      height: 8px; border-radius: 999px; background: #16202b; overflow: hidden;
+    }
+    .countdown-fill {
+      height: 100%; width: 0%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--phase), var(--accent2));
+      transition: width .2s linear;
+    }
+    .countdown.ready .countdown-fill {
+      background: linear-gradient(90deg, #0f8, var(--accent));
+    }
+    .countdown.expired .countdown-fill {
+      background: linear-gradient(90deg, #a33, var(--danger));
+    }
+
+    /* Profile */
+    .profile-grid {
+      display: grid; gap: .55rem;
+    }
+    .profile-row {
+      display: grid; grid-template-columns: 110px 1fr auto; gap: .45rem; align-items: center;
+    }
+    @media (max-width: 620px) {
+      .profile-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .profile-key {
+      font-size: .78rem; color: var(--muted); font-family: ui-monospace, monospace;
+    }
+    #avatarPreview {
+      width: 72px; height: 72px; border-radius: 12px;
+      border: 1px solid var(--border); object-fit: cover; background: #0a1018;
+    }
+    .avatar-row { display: flex; gap: .75rem; align-items: flex-start; flex-wrap: wrap; }
+    .name-row {
+      display: flex; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+      padding: .75rem 0; border-bottom: 1px solid var(--border); align-items: center;
+    }
+    .name-row:last-child { border-bottom: 0; }
+    details.dev {
+      margin-top: .75rem; color: var(--muted); font-size: .78rem;
+    }
+    details.dev summary { cursor: pointer; color: var(--muted); }
+    .stack-debug { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="./index.html" title="rh.names home">
+      <img class="brand-logo" src="./assets/rh-logo.svg" width="32" height="32" alt="rh.names" />
+      <span>RH <span class="rh">Name Service</span></span>
+      <span class="pill phase">Phase-1 ENS</span>
+    </a>
+    <div class="nav">
+      <a href="index.html">Product home</a>
+      <a class="active" href="phase1.html">Phase-1 ENS</a>
+      <a href="#myNames">My names</a>
+      <button type="button" class="icon" data-theme-toggle title="Theme">☾</button>
+      <span id="netPill" class="pill">not connected</span>
+      <button id="connectBtn" class="secondary">Connect wallet</button>
+      <button id="disconnectBtn" class="secondary" hidden>Disconnect</button>
+    </div>
+  </header>
+
+  <main>
+    <h1>ENS-compatible <span style="color:var(--phase)">.rh</span></h1>
+    <p class="sub">
+      Register a <strong>.rh</strong> name on Robinhood Mainnet — min 28 days · tiered rent
+      read live from the price oracle. Commit → wait ~60s → register & pay.
+    </p>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div id="pricePills" class="prices"></div>
+    </div>
+
+    <!-- Debug-only: hidden unless ?debug=1. Was a deployment-smoke card for RPC/stack wiring. -->
+    <div id="stackStatusCard" class="card stack-debug" style="margin-bottom:1rem" hidden>
+      <h2>Stack status (public RPC reads)</h2>
+      <div id="infoOut" class="result">Loading…</div>
+    </div>
+
+    <div id="myNames" class="card" style="margin-bottom:1rem">
+      <h2>My names</h2>
+      <div class="hint" style="margin-bottom:.55rem">
+        Shows names tracked in this browser for your connected wallet (register + manual add).
+        Full wallet history needs a chain indexer later.
+      </div>
+      <p class="hint" style="margin:.2rem 0 .65rem">Primary name: <strong id="myPrimary">(connect first)</strong></p>
+      <div class="row" style="margin-bottom:.75rem">
+        <input id="addTrack" placeholder="add owned label" style="max-width:220px" />
+        <button id="addTrackBtn" class="secondary tiny" type="button">Track</button>
+      </div>
+      <div id="myList"></div>
+    </div>
+
+    <div class="grid two">
+      <section class="card">
+        <h2>Resolve / reverse</h2>
+        <div class="field">
+          <label for="resolveName">Label (without .rh)</label>
+          <div class="row">
+            <input id="resolveName" placeholder="alice" />
+            <button id="resolveBtn">Lookup</button>
+          </div>
+          <div class="hint">Shows availability, owner, and expiry.</div>
+        </div>
+        <div id="resolveOut" class="result">Enter a label and click Lookup.</div>
+        <div class="field" style="margin-top:1rem">
+          <label for="reverseName">Primary name for this wallet</label>
+          <div class="row">
+            <input id="reverseName" placeholder="alice.rh" />
+            <button id="reverseBtn" class="secondary">Set primary name</button>
+          </div>
+          <div class="hint">
+            Optional: set which .rh wallets should show next to your address.
+          </div>
+        </div>
+        <div id="reverseOut" class="result">Connect a wallet, then set a primary name you own.</div>
+      </section>
+
+      <section class="card">
+        <h2>Register (commit → reveal)</h2>
+        <div class="steps">
+          <span class="pill">1 commit</span>
+          <span class="pill">2 countdown</span>
+          <span class="pill">3 register + pay</span>
+        </div>
+        <div class="field">
+          <label for="regName">Label</label>
+          <input id="regName" placeholder="coolname" />
+        </div>
+        <div class="field">
+          <label for="regDuration">Duration</label>
+          <select id="regDuration">
+            <option value="28d" selected>28 days (minimum)</option>
+            <option value="90d">90 days</option>
+            <option value="180d">180 days</option>
+            <option value="1y">1 year (common)</option>
+            <option value="2y">2 years</option>
+            <option value="5y">5 years</option>
+          </select>
+          <div id="durationMeta" class="hint">Linear proration · wires resolver + setAddr on register</div>
+        </div>
+        <div class="row">
+          <button id="quoteBtn" class="secondary">Quote</button>
+          <button id="commitBtn">1. Commit</button>
+          <button id="regBtn" class="accent" disabled title="Commit and wait first">2. Register</button>
+        </div>
+        <div id="countdownBar" class="countdown idle" aria-live="polite">
+          <div id="countdownLabel" class="countdown-label">No commitment yet.</div>
+          <div class="countdown-track"><div id="countdownFill" class="countdown-fill"></div></div>
+        </div>
+        <div id="regOut" class="result">Quote / commit first. Commitment+secret cached in browser for this label+owner.</div>
+      </section>
+    </div>
+
+    <div class="grid two" style="margin-top:1rem">
+      <section class="card">
+        <h2>Profile</h2>
+        <div class="hint" style="margin-bottom:.65rem">
+          Optional public profile fields on your name. Only the name owner can save.
+        </div>
+        <div class="field">
+          <label for="profileLabel">Label (without .rh)</label>
+          <div class="row">
+            <input id="profileLabel" placeholder="alice" />
+            <button id="profileLoadBtn" class="secondary">Load profile</button>
+          </div>
+        </div>
+        <div class="avatar-row" style="margin-bottom:.75rem">
+          <img id="avatarPreview" alt="avatar preview" hidden />
+          <div class="hint">Avatar preview: http(s) or ipfs://.</div>
+        </div>
+        <div class="profile-grid">
+          <div class="profile-row">
+            <span class="profile-key">Website</span>
+            <input id="profileUrl" placeholder="https://…" />
+            <button id="saveUrlBtn" class="tiny secondary">Save</button>
+          </div>
+          <div class="profile-row">
+            <span class="profile-key">Avatar</span>
+            <input id="profileAvatar" placeholder="ipfs://… or https://…" />
+            <button id="saveAvatarBtn" class="tiny secondary">Save</button>
+          </div>
+          <div class="profile-row">
+            <span class="profile-key">Bio</span>
+            <input id="profileDesc" placeholder="Short bio" />
+            <button id="saveDescBtn" class="tiny secondary">Save</button>
+          </div>
+          <div class="profile-row">
+            <span class="profile-key">Twitter</span>
+            <input id="profileTwitter" placeholder="@handle" />
+            <button id="saveTwitterBtn" class="tiny secondary">Save</button>
+          </div>
+          <div class="profile-row">
+            <span class="profile-key">GitHub</span>
+            <input id="profileGithub" placeholder="username" />
+            <button id="saveGithubBtn" class="tiny secondary">Save</button>
+          </div>
+          <div class="profile-row">
+            <span class="profile-key">Email</span>
+            <input id="profileEmail" placeholder="you@example.com" />
+            <button id="saveEmailBtn" class="tiny secondary">Save</button>
+          </div>
+        </div>
+        <div id="profileOut" class="result">Load a name to see profile. Save requires the owner wallet.</div>
+      </section>
+
+      <section class="card">
+        <h2>Renew · single-key editor · commit cache</h2>
+        <div class="field">
+          <label for="renewName">Label</label>
+          <input id="renewName" placeholder="ensp1test" />
+        </div>
+        <div class="field">
+          <label for="renewDuration">Extend by</label>
+          <select id="renewDuration">
+            <option value="28d">28 days</option>
+            <option value="90d">90 days</option>
+            <option value="1y" selected>1 year</option>
+            <option value="2y">2 years</option>
+            <option value="5y">5 years</option>
+          </select>
+        </div>
+        <div class="row">
+          <button id="renewQuoteBtn" class="secondary">Quote renew</button>
+          <button id="renewBtn">Renew</button>
+        </div>
+        <div id="renewOut" class="result">Quote then renew via Phase-1 controller.</div>
+
+        <hr style="border:0;border-top:1px solid var(--border);margin:1rem 0" />
+
+        <h2 style="margin-top:.25rem">Pending commitment</h2>
+        <div class="hint" style="margin-bottom:.65rem">Secret stays in this browser only — needed for the Register step.</div>
+        <div id="commitOut" class="result">No pending commitment.</div>
+        <div class="row" style="margin-top:.6rem">
+          <button id="clearCommitBtn" class="secondary">Clear local secret</button>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <div id="footerSimple"></div>
+      <details class="dev" id="devDetails">
+        <summary>Developer / contract details</summary>
+        Registry <code id="ensLine"></code><br />
+        BaseRegistrar <code id="baseLine"></code><br />
+        Controller <code id="ctrlLine"></code> · Oracle <code id="oracleLine"></code><br />
+        Reverse <code id="revLine"></code> · Resolver <code id="resLine"></code><br />
+        Multisig <code id="msLine"></code><br />
+        Dual stack: V4 remains available from product home. Names do not auto-merge.<br />
+        Stack smoke-tests: <code>?debug=1</code>
+      </details>
+    </footer>
+  </main>
+
+  <script type="module" src="./phase1-app.js"></script>
+</body>
+</html>

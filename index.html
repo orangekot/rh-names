@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>.rh Names — Robinhood</title>
+  <link rel="icon" href="./assets/rh-logo.svg" type="image/svg+xml" />
+  <script>
+    try {
+      var t = localStorage.getItem("rh-theme");
+      if (t !== "light" && t !== "dark") {
+        t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
+  <style>
+    :root, [data-theme="light"] {
+      --bg: #f4f7fb; --panel: #ffffff; --border: #e2e8f0; --text: #0f172a;
+      --muted: #64748b; --accent: #2563eb; --accent2: #0ea5e9; --ok: #059669;
+      --danger: #dc2626; --warn: #d97706; --phase: #7c3aed; --chip: #eff6ff;
+      --header: #fffffff2; --input: #f8fafc; --hero-grad: #dbeafe; --mono: #334155;
+      --search-shadow: #0f172a0d;
+    }
+    [data-theme="dark"] {
+      --bg: #0b0f14; --panel: #121821; --border: #1e2a38; --text: #e7eef7;
+      --muted: #8fa3b8; --accent: #3d8bfd; --accent2: #00c805; --ok: #00c805;
+      --danger: #ff6b6b; --warn: #ffcc66; --phase: #9b7bff; --chip: #15102a;
+      --header: #0b0f14cc; --input: #0a1018; --hero-grad: #1a0f3d55; --mono: #b8c9db;
+      --search-shadow: #00000055;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(900px 500px at 50% -10%, var(--hero-grad), transparent), var(--bg);
+      color: var(--text); min-height: 100vh;
+      transition: background .2s, color .2s;
+    }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .9rem 1.25rem; border-bottom: 1px solid var(--border);
+      background: var(--header); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 10;
+      gap: .75rem; flex-wrap: wrap;
+    }
+    a.brand {
+      font-weight: 800; letter-spacing: -.02em; display: flex; gap: .55rem; align-items: center;
+      text-decoration: none; color: var(--text);
+    }
+    a.brand:hover { color: var(--accent); }
+    .brand-logo {
+      width: 34px; height: 34px; border-radius: 10px; display: block;
+      border: 1px solid var(--border); background: #0b0f14;
+    }
+    .brand .dot { color: var(--accent); }
+    .nav { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; }
+    .nav a, .nav button.linkish {
+      font-size: .85rem; text-decoration: none; color: var(--muted);
+      border: 1px solid transparent; border-radius: 999px; padding: .4rem .75rem;
+      background: transparent; cursor: pointer; font-weight: 600;
+    }
+    .nav a.active { color: var(--accent); background: var(--chip); border-color: var(--border); }
+    .pill {
+      font-size: .72rem; padding: .22rem .55rem; border-radius: 999px;
+      border: 1px solid var(--border); color: var(--muted); background: var(--panel);
+    }
+    .pill.ok { color: var(--ok); }
+    .pill.phase { color: var(--phase); }
+    .pill.warn { color: var(--warn); }
+    button {
+      background: var(--accent); color: #fff; border: 0; border-radius: 999px;
+      font-weight: 700; padding: .65rem 1.05rem; cursor: pointer;
+    }
+    button.secondary { background: var(--panel); color: var(--text); border: 1px solid var(--border); }
+    button.accent { background: var(--ok); color: #041206; }
+    button.tiny { padding: .35rem .65rem; font-size: .78rem; border-radius: 8px; }
+    button.icon {
+      width: 2.2rem; height: 2.2rem; padding: 0; border-radius: 999px;
+      background: var(--panel); color: var(--text); border: 1px solid var(--border);
+      font-size: 1rem; line-height: 1;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .wallet-chip {
+      display: inline-flex; align-items: center; gap: .4rem;
+    }
+    .wallet-avatar, .name-avatar, .field-avatar {
+      border-radius: 999px; object-fit: cover; background: var(--input);
+      border: 1px solid var(--border); display: block;
+    }
+    .wallet-avatar { width: 28px; height: 28px; }
+    .name-avatar { width: 64px; height: 64px; border-radius: 16px; }
+    main { max-width: 920px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    .hero { text-align: center; padding: 3rem 0 1.5rem; }
+    .hero h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 0 0 .6rem; color: var(--accent); font-weight: 800; }
+    .hero p { color: var(--muted); margin: 0 auto 1.25rem; max-width: 34rem; line-height: 1.5; }
+    .searchbox {
+      display: flex; gap: .5rem; max-width: 520px; margin: 0 auto;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+      padding: .35rem .35rem .35rem .95rem; box-shadow: 0 10px 30px var(--search-shadow);
+    }
+    .searchbox.inline { max-width: none; margin: 0; }
+    .searchbox input {
+      flex: 1; border: 0; outline: none; font-size: 1.05rem; background: transparent; color: var(--text);
+    }
+    .prices { display: flex; gap: .4rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+      padding: 1.1rem 1.15rem; margin-top: 1rem; box-shadow: 0 1px 2px var(--search-shadow);
+    }
+    .card h2 { margin: 0 0 .75rem; font-size: 1.05rem; }
+    .tabs { display: flex; gap: .35rem; flex-wrap: wrap; margin: .5rem 0 1rem; }
+    .tabs button {
+      background: var(--panel); color: var(--muted); border: 1px solid var(--border);
+      border-radius: 999px; padding: .4rem .8rem; font-size: .82rem;
+    }
+    .tabs button.active { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); background: var(--chip); }
+    label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: .3rem; }
+    .field { margin-bottom: .7rem; }
+    .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+    input, select {
+      width: 100%; background: var(--input); border: 1px solid var(--border);
+      color: var(--text); border-radius: 10px; padding: .65rem .75rem; font-size: 1rem;
+    }
+    /* Duration option list: browsers only partially style options; label text carries −N% in red via downside string */
+    select option { color: var(--text); }
+    .result, .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .84rem; white-space: pre-wrap; color: var(--mono);
+      background: var(--input); border-radius: 12px; padding: .75rem; border: 1px solid var(--border);
+      min-height: 2.5rem; word-break: break-all;
+    }
+    .hint { font-size: .78rem; color: var(--muted); line-height: 1.4; }
+    .err { color: var(--danger); }
+    .ok { color: var(--ok); }
+    .discount { color: var(--danger); font-weight: 700; }
+    .name-hd {
+      display: flex; justify-content: flex-start; gap: 1rem; flex-wrap: wrap; align-items: center;
+    }
+    .name-hd h1 { margin: 0; font-size: 1.75rem; }
+    .name-row {
+      display: flex; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+      padding: .75rem 0; border-bottom: 1px solid var(--border); align-items: center;
+    }
+    .name-row:last-child { border-bottom: 0; }
+    .countdown {
+      margin: .75rem 0; border: 1px solid var(--border); border-radius: 12px;
+      padding: .65rem .75rem; background: var(--input);
+    }
+    .countdown.ready { border-color: color-mix(in srgb, var(--ok) 50%, var(--border)); }
+    .countdown.warn { border-color: color-mix(in srgb, var(--warn) 50%, var(--border)); }
+    .countdown.expired { border-color: color-mix(in srgb, var(--danger) 50%, var(--border)); }
+    .countdown-label { font-size: .85rem; margin-bottom: .4rem; font-variant-numeric: tabular-nums; }
+    .countdown-track { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+    .countdown-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .2s linear; }
+    .grid2 { display: grid; gap: 1rem; }
+    @media (min-width: 800px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+    .facts { display: grid; gap: .75rem; }
+    @media (min-width: 720px) { .facts { grid-template-columns: 1fr 1fr; } }
+    .fact {
+      background: var(--input); border: 1px solid var(--border); border-radius: 12px;
+      padding: .65rem .75rem;
+    }
+    .fact label { margin: 0 0 .2rem; }
+    .fact .value { font-size: .92rem; word-break: break-word; }
+    .fact.avatar-fact { display: flex; gap: .75rem; align-items: center; }
+    footer { margin-top: 2rem; color: var(--muted); font-size: .75rem; line-height: 1.55; }
+    a { color: var(--accent); }
+    code { font-size: .75rem; word-break: break-all; }
+    details summary { cursor: pointer; }
+    .loading-dot::after { content: ""; animation: dots 1.2s steps(4, end) infinite; }
+    @keyframes dots {
+      0%, 20% { content: ""; }
+      40% { content: "."; }
+      60% { content: ".."; }
+      80%, 100% { content: "..."; }
+    }
+    .price-line { font-size: 1rem; font-weight: 700; margin: .35rem 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="./index.html" title="rh.names home">
+      <img class="brand-logo" src="./assets/rh-logo.svg" width="34" height="34" alt="rh.names" />
+      <span>rh<span class="dot">.names</span></span>
+      <span class="pill phase">Phase-1 ENS</span>
+    </a>
+    <div class="nav">
+      <a href="#" data-nav="search" class="active">Search</a>
+      <a href="#" data-nav="my">My names</a>
+      <button type="button" class="icon" data-theme-toggle title="Dark mode">☾</button>
+      <span id="netPill" class="pill">not connected</span>
+      <span class="wallet-chip">
+        <img id="walletAvatar" class="wallet-avatar" src="./assets/default-avatar.svg" alt="" hidden />
+        <button id="connectBtn" type="button">Connect</button>
+      </span>
+      <button id="disconnectBtn" type="button" class="secondary" hidden>Disconnect</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="viewSearch">
+      <div class="hero">
+        <h1>Your Robinhood username</h1>
+        <p>One <strong>.rh</strong> name for addresses and profiles on Robinhood Mainnet — ENS-compatible Phase‑1 stack.</p>
+        <div class="searchbox">
+          <input id="heroSearch" placeholder="Search for a name" autocomplete="off" />
+          <button id="heroSearchBtn" type="button">Search</button>
+        </div>
+        <div id="pricePills" class="prices"></div>
+        <div id="searchOut" class="hint" style="margin-top:.75rem"></div>
+      </div>
+      <div class="card">
+        <h2>How it works</h2>
+        <div class="hint">
+          1) Search a label →
+          2) <strong>Commit</strong> (~60s wait) locks your secret so nobody can front‑run the same name →
+          3) Register & pay rent → optional primary name + profile.
+          Min duration <strong>28 days</strong>.
+          <br /><br />
+          <strong>Yearly rent</strong> (oracle): <span id="howPriceHint">3‑char 0.03 · 4‑char 0.01 · 5+ 0.005 ETH</span>.
+          Each extra full month (~30d) past 28 days adds <span class="discount">−4%</span> off (max <span class="discount">−48%</span>). Same tiers apply when renewing.
+        </div>
+      </div>
+    </section>
+
+    <section id="viewName" hidden>
+      <div class="card" style="margin-top:0">
+        <div class="searchbox inline">
+          <input id="nameSearch" placeholder="Search another name" autocomplete="off" />
+          <button id="nameSearchBtn" type="button">Search</button>
+          <button type="button" class="secondary" data-nav="search">Home</button>
+        </div>
+      </div>
+
+      <div class="name-hd card">
+        <img id="nameAvatar" class="name-avatar" src="./assets/default-avatar.svg" alt="" />
+        <div>
+          <h1 id="profileTitle">name.rh</h1>
+          <div id="nameLoading" class="hint"></div>
+        </div>
+      </div>
+
+      <div class="tabs" id="nameTabs">
+        <button type="button" class="active" data-tab="overview">Overview</button>
+        <button type="button" data-tab="records">Records</button>
+      </div>
+
+      <div id="tab-overview" class="card">
+        <div class="facts" id="overviewFacts">
+          <div class="fact">
+            <label>Status</label>
+            <div id="ownAvail" class="value mono">—</div>
+          </div>
+          <div class="fact">
+            <label>Owner (registry)</label>
+            <div id="ownOwner" class="value mono">—</div>
+          </div>
+          <div class="fact">
+            <label>NFT holder</label>
+            <div id="ownNft" class="value mono">—</div>
+            <div class="hint" style="margin-top:.25rem">Usually same as Owner. Registry owner vs BaseRegistrar NFT can diverge after rare advanced transfers.</div>
+          </div>
+          <div class="fact">
+            <label>Expires</label>
+            <div id="ownExp" class="value mono">—</div>
+          </div>
+          <div class="fact avatar-fact">
+            <img id="fieldAvatar" class="field-avatar" src="./assets/default-avatar.svg" width="48" height="48" alt="" />
+            <div style="min-width:0;flex:1">
+              <label>Avatar</label>
+              <div id="ownAvatar" class="value hint">Default Robinhood avatar</div>
+            </div>
+          </div>
+          <div class="fact">
+            <label>Bio</label>
+            <div id="ownBio" class="value">—</div>
+          </div>
+          <div class="fact">
+            <label>Website</label>
+            <div id="ownUrl" class="value">—</div>
+          </div>
+          <div class="fact">
+            <label>Points to</label>
+            <div id="ownAddr" class="value mono">—</div>
+          </div>
+        </div>
+
+        <div id="registerPanel" style="margin-top:1.1rem" hidden>
+          <h2>Register (commit → reveal)</h2>
+          <div class="field"><label>Label</label><input id="regName" readonly /></div>
+          <div class="field">
+            <label>Duration</label>
+            <select id="regDuration"></select>
+            <div class="hint" style="margin-top:.35rem">
+              Red −% in each option is the duration discount on rent (same formula as renew).
+            </div>
+          </div>
+          <div class="price-line">
+            Price: <span id="livePrice">—</span>
+            <span id="liveDiscount" class="discount"></span>
+          </div>
+          <div class="row">
+            <button id="quoteBtn" class="secondary" type="button">Refresh quote</button>
+            <button id="commitBtn" type="button">Commit</button>
+            <button id="regBtn" class="accent" type="button" disabled>Register</button>
+          </div>
+          <div id="countdownBar" class="countdown idle">
+            <div id="countdownLabel" class="countdown-label">No commitment yet.</div>
+            <div class="countdown-track"><div id="countdownFill" class="countdown-fill"></div></div>
+          </div>
+          <div id="regOut" class="result">Available names only.</div>
+          <button id="clearCommitBtn" class="secondary tiny" type="button" style="margin-top:.5rem">Clear local secret</button>
+        </div>
+
+        <div id="manageHint" class="hint" style="margin-top:.6rem" hidden>
+          This name is taken. Owners can edit records and set a primary name from <strong>My names</strong>.
+        </div>
+      </div>
+
+      <div id="tab-records" class="card" hidden>
+        <h2>Text records & address</h2>
+        <input type="hidden" id="profileLabel" />
+        <div class="field">
+          <label>Points to (ETH address)</label>
+          <div class="hint" style="margin-bottom:.35rem">
+            Wallet / dApp resolution target for this .rh name (resolver <code>addr</code>). Tokens sent to the name go here when wallets integrate ENS-style resolution — not automatic on RH yet, but this is the standard field they will read.
+          </div>
+          <div class="row">
+            <input id="profileAddr" placeholder="0x…" />
+            <button id="saveAddrBtn" class="tiny secondary" type="button">Save</button>
+          </div>
+        </div>
+        <div class="field"><label>Website</label><div class="row"><input id="profileUrl" placeholder="https://…" /><button id="saveUrlBtn" class="tiny secondary" type="button">Save</button></div></div>
+        <div class="field"><label>Avatar</label><div class="row"><input id="profileAvatar" placeholder="ipfs://… or https://…" /><button id="saveAvatarBtn" class="tiny secondary" type="button">Save</button></div></div>
+        <div class="field"><label>Bio</label><div class="row"><input id="profileDesc" placeholder="Short bio" /><button id="saveDescBtn" class="tiny secondary" type="button">Save</button></div></div>
+        <div id="profileSaveOut" class="result">Owner wallet required to save.</div>
+      </div>
+    </section>
+
+    <section id="viewMy" hidden>
+      <div class="card">
+        <h2>Your names</h2>
+        <div class="hint" style="margin-bottom:.45rem">
+          Primary: <strong id="myPrimary">(connect first)</strong>
+        </div>
+        <div class="hint" style="margin-bottom:.6rem">
+          Names you register or manually track in this browser (BaseRegistrar is not enumerable without an indexer).
+        </div>
+        <div class="row" style="margin-bottom:.75rem">
+          <input id="addTrack" placeholder="add owned label" style="max-width:220px" />
+          <button id="addTrackBtn" class="secondary" type="button">Track</button>
+        </div>
+        <div id="myList"></div>
+        <div class="field" style="margin-top:1rem">
+          <label>Set primary name</label>
+          <div class="row">
+            <input id="reverseName" placeholder="alice.rh" />
+            <button id="reverseBtn" type="button">Set primary</button>
+          </div>
+        </div>
+        <div id="reverseOut" class="result" hidden></div>
+      </div>
+    </section>
+
+    <footer>
+      <div id="footerAddrs"></div>
+      <details style="margin-top:.5rem">
+        <summary>Contract details</summary>
+        Product stack: Phase‑1 ENS. V4 is internal (ops only). Pricing upgrade: new oracle + controller (multisig <code>addController</code>).
+      </details>
+    </footer>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
