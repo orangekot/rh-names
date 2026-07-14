@@ -10,3 +10,4 @@ export * from "./commit-store.js";
 export * from "./phase1-client.js";
 export * from "./v4-client.js";
 export * from "./name-tracker.js";
+export * from "./portfolio.js";

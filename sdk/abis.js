@@ -14,6 +14,7 @@ export const PHASE1_BASE_ABI = [
   "function ens() view returns (address)",
   "function baseNode() view returns (bytes32)",
   "function controllers(address) view returns (bool)",
+  "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
 ];
 
 export const PHASE1_CTRL_ABI = [
@@ -37,6 +38,10 @@ export const PHASE1_CTRL_ABI = [
   "function renew(string,uint256) payable",
   "function prices() view returns (address)",
   "function base() view returns (address)",
+  "function owner() view returns (address)",
+  "function withdraw()",
+  "event NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires)",
+  "event NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires)",
 ];
 
 export const PHASE1_ORACLE_ABI = [

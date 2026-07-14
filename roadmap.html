@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roadmap — rh.names</title>
+  <link rel="icon" href="./assets/rh-logo.svg" type="image/svg+xml" />
+  <script>
+    try {
+      var t = localStorage.getItem("rh-theme");
+      if (t !== "light" && t !== "dark") {
+        t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  </script>
+  <style>
+    :root, [data-theme="light"] {
+      --bg: #f4f7fb; --panel: #ffffff; --border: #e2e8f0; --text: #0f172a;
+      --muted: #64748b; --accent: #00c805; --header: #fffffff2;
+    }
+    [data-theme="dark"] {
+      --bg: #0b0f14; --panel: #121821; --border: #1e2a38; --text: #e7eef7;
+      --muted: #8fa3b8; --accent: #00c805; --header: #0b0f14cc;
+    }
+    body { margin:0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    header { display:flex; justify-content:space-between; align-items:center; padding:.9rem 1.25rem; border-bottom:1px solid var(--border); background:var(--header); position:sticky; top:0; }
+    a { color: var(--accent); text-decoration:none; font-weight:600; }
+    main { max-width:720px; margin:0 auto; padding:3rem 1rem; text-align:center; }
+    h1 { margin:0 0 .5rem; }
+    p { color: var(--muted); font-size:1.1rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="./index.html">← rh.names</a>
+    <nav>
+      <a href="./faq.html">FAQ</a> ·
+      <a href="./roadmap.html">Roadmap</a> ·
+      <a href="./rank.html">Rank</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Roadmap</h1>
+    <p>TBA</p>
+  </main>
+</body>
+</html>

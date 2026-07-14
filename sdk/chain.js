@@ -6,9 +6,21 @@ export const CHAIN = {
   chainName: "Robinhood Mainnet",
   rpcUrl: "https://rpc.mainnet.chain.robinhood.com",
   nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-  explorer: null,
+  /** Robinhood Chain Blockscout (canonical). */
+  explorer: "https://robinhoodchain.blockscout.com",
+  blockscoutApi: "https://robinhoodchain.blockscout.com/api",
   tld: "rh",
 };
+
+/** Blockscout deep links. */
+export function txUrl(hash, cfg = CHAIN) {
+  const base = (cfg.explorer || CHAIN.explorer).replace(/\/$/, "");
+  return `${base}/tx/${hash}`;
+}
+export function addressUrl(addr, cfg = CHAIN) {
+  const base = (cfg.explorer || CHAIN.explorer).replace(/\/$/, "");
+  return `${base}/address/${addr}`;
+}
 
 /** Custom V4 rental product stack (this repo). */
 export const V4 = {

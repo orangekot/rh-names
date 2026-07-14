@@ -12,10 +12,38 @@ export function normalizeLabel(raw) {
     .replace(/\.rh$/i, "");
 }
 
+/** True if label contains any non-ASCII code unit/point (emoji, accents…). */
+export function hasNonAscii(name) {
+  if (!name) return false;
+  // reject anything outside printable ASCII after normalize
+  return /[^\x00-\x7F]/.test(name);
+}
+
+/**
+ * Unicode codepoint length (mirrors ENS StringUtils.strlen for multi-byte UTF-8).
+ * On-chain controller uses this — emoji count as 1–N codepoints, not bytes.
+ */
+export function unicodeLen(s) {
+  return [...String(s || "")].length;
+}
+
+/**
+ * Product FE validation:
+ * - empty / too short / too long blocked
+ * - non-ASCII (incl. emoji) blocked in product UI with a distinct message
+ * - LDH / DNS-label charset only (ENS-shaped username product)
+ *
+ * On-chain SimpleRHRegistrarController.valid is ONLY 3…32 unicode length —
+ * emoji WOULD mint on-chain if sent via cast/custom client. Product policy is stricter.
+ */
 export function validateLabel(name) {
   if (!name) return "Enter a label (without .rh)";
-  if (name.length < MIN_LABEL) return `Label too short (min ${MIN_LABEL} chars)`;
-  if (name.length > MAX_LABEL) return `Label too long (max ${MAX_LABEL} chars)`;
+  const len = unicodeLen(name);
+  if (len < MIN_LABEL) return `Label too short (min ${MIN_LABEL} characters)`;
+  if (len > MAX_LABEL) return `Label too long (max ${MAX_LABEL} characters)`;
+  if (hasNonAscii(name)) {
+    return "This name contains non-ASCII characters and cannot be registered.";
+  }
   if (!LABEL_RE.test(name)) {
     return "Invalid label: only a-z, 0-9, hyphen; no leading/trailing hyphen";
   }
