@@ -162,20 +162,27 @@ function shortAddress(addr) {
 }
 
 function setConnectedUi() {
-  const disc = $("disconnectBtn");
+  const btn = $("connectBtn");
   if (!account) {
-    $("connectBtn").textContent = "Connect";
-    $("connectBtn").hidden = false;
-    if (disc) disc.hidden = true;
+    btn.textContent = "Connect";
+    btn.hidden = false;
+    btn.classList.remove("secondary");
+    btn.onmouseenter = null;
+    btn.onmouseleave = null;
+    btn.onclick = connect;
     $("netPill").textContent = "not connected";
     $("netPill").classList.remove("ok");
     setImg($("walletAvatar"), DEFAULT_AVATAR);
     return;
   }
   // Green button = short EVM address only (primary name goes in #netPill).
-  $("connectBtn").textContent = shortAddress(account);
-  $("connectBtn").hidden = false;
-  if (disc) disc.hidden = false;
+  btn.textContent = shortAddress(account);
+  btn.hidden = false;
+  btn.classList.remove("secondary");
+  // Hover behavior: show "Disconnect" on hover, address when not hovering
+  btn.onmouseenter = () => { btn.textContent = "Disconnect"; btn.classList.add("secondary"); };
+  btn.onmouseleave = () => { btn.textContent = shortAddress(account); btn.classList.remove("secondary"); };
+  btn.onclick = disconnect;
   $("netPill").textContent = "loading…";
   $("netPill").classList.add("ok");
 }
@@ -192,11 +199,11 @@ async function refreshPrimaryPill() {
       pill.textContent = "not connected";
       pill.classList.remove("ok");
     }
-    if (btn) btn.textContent = "Connect";
+    if (btn) { btn.textContent = "Connect"; btn.classList.remove("secondary"); }
     return;
   }
   // Hard rule: green connect button = address only, never primary name.
-  if (btn) btn.textContent = shortAddress(account);
+  if (btn) { btn.textContent = shortAddress(account); btn.classList.remove("secondary"); }
   if (!pill) return;
   pill.textContent = "loading…";
   pill.classList.add("ok");
@@ -343,7 +350,7 @@ async function refreshPrices() {
 
     const monthRow =
       `<div class="prices-row">` +
-      `<div class="prices-row-label">28 days <span class="hint">(0% duration off)</span></div>` +
+      `<div class="prices-row-label">28 days</div>` +
       `<div class="prices">` +
       monthly
         .map((t) =>
@@ -360,7 +367,7 @@ async function refreshPrices() {
 
     const yearRow =
       `<div class="prices-row">` +
-      `<div class="prices-row-label">1 year <span class="hint">(−${yearPct}% duration off)</span></div>` +
+      `<div class="prices-row-label">1 year</div>` +
       `<div class="prices">` +
       yearly
         .map((t) =>
@@ -377,24 +384,9 @@ async function refreshPrices() {
 
     $("pricePills").innerHTML = monthRow + yearRow;
 
+    // howPriceHint left empty — price pills below search bar show the live prices.
     const how = $("howPriceHint");
-    if (how) {
-      const yMap = Object.fromEntries(
-        yearly.map((t) => [t.chars, formatEthDisplay(t.total, { decimals: 4 })])
-      );
-      const mMap = Object.fromEntries(
-        monthly.map((t) => [t.chars, formatEthDisplay(t.total, { decimals: 4 })])
-      );
-      const u = (eth) => {
-        const s = formatUsd(Number(eth));
-        return s ? ` ${s}` : "";
-      };
-      // Show paid totals (discounted year + floor month). Raw oracle yearly kept only as note.
-      how.textContent =
-        `28d: 3 chars ${mMap["3"]}${u(mMap["3"])} · 4 ${mMap["4"]}${u(mMap["4"])} · 5+ ${mMap["5+"]}${u(mMap["5+"])} ETH. ` +
-        `1y (incl. −${yearPct}%): 3 ${yMap["3"]}${u(yMap["3"])} · 4 ${yMap["4"]}${u(yMap["4"])} · 5+ ${yMap["5+"]}${u(yMap["5+"])} ETH. ` +
-        `Raw yearly base (pre-discount): ${formatEthDisplay(base.p3, { decimals: 4 })} / ${formatEthDisplay(base.p4, { decimals: 4 })} / ${formatEthDisplay(base.p5, { decimals: 4 })} ETH.`;
-    }
+    if (how) how.textContent = "";
   } catch (e) {
     $("pricePills").innerHTML = `<span class="pill warn">${escapeHtml(formatError(e, errOpts()))}</span>`;
   }

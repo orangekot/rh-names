@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>.rh V4 (INTERNAL) — Robinhood</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b0f14; --panel: #121821; --border: #1e2a38; --text: #e7eef7;
+      --muted: #8fa3b8; --accent: #00c805; --accent2: #3d8bfd; --danger: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #0f3d1e55, transparent),
+        radial-gradient(900px 500px at 100% 0%, #0b2a4a55, transparent),
+        var(--bg);
+      color: var(--text); min-height: 100vh;
+    }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px); position: sticky; top: 0; background: #0b0f14cc;
+      gap: .75rem; flex-wrap: wrap;
+    }
+    .brand { font-weight: 700; } .brand span { color: var(--accent); }
+    .nav { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+    .nav a {
+      font-size: .8rem; text-decoration: none; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 999px; padding: .3rem .7rem;
+    }
+    .nav a.active {
+      color: var(--accent); border-color: #145c28; background: #0a1f12;
+    }
+    main { max-width: 920px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    h1 { font-size: 1.75rem; margin: 0 0 .35rem; }
+    .sub { color: var(--muted); margin-bottom: 1.5rem; line-height: 1.45; }
+    .grid { display: grid; gap: 1rem; }
+    @media (min-width: 760px) { .grid.two { grid-template-columns: 1fr 1fr; } }
+    .card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.1rem 1.15rem;
+    }
+    .card h2 { margin: 0 0 .75rem; font-size: 1rem; color: #cfe0f2; }
+    label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .35rem; }
+    .row { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .field { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .65rem; }
+    input, select {
+      flex: 1; min-width: 0; background: #0a1018; border: 1px solid var(--border);
+      color: var(--text); border-radius: 10px; padding: .7rem .8rem; font-size: 1rem;
+    }
+    input:focus, select:focus { outline: 1px solid var(--accent); }
+    button {
+      background: var(--accent); color: #041206; border: 0; border-radius: 10px;
+      font-weight: 700; padding: .7rem 1rem; cursor: pointer; white-space: nowrap;
+    }
+    button.secondary { background: #1a2634; color: var(--text); border: 1px solid var(--border); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .pill {
+      font-size: .75rem; padding: .25rem .55rem; border-radius: 999px;
+      border: 1px solid var(--border); color: var(--muted);
+    }
+    .pill.ok { color: var(--accent); border-color: #145c28; background: #0a1f12; }
+    .pill.warn { color: #ffcc66; border-color: #665522; background: #1a1608; }
+    .result {
+      margin-top: .85rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .85rem; white-space: pre-wrap; color: #b8c9db;
+      background: #0a1018; border-radius: 10px; padding: .75rem; border: 1px solid var(--border);
+      min-height: 3rem;
+    }
+    .prices { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
+    .prices .pill { color: #c9e7d1; }
+    footer { margin-top: 2rem; color: var(--muted); font-size: .8rem; line-height: 1.5; }
+    a { color: var(--accent2); }
+    .err { color: var(--danger); }
+    .ok { color: var(--accent); }
+    .hint { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+    code { font-size: .78rem; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">RH <span>Name Service</span> <span class="pill warn">V4 INTERNAL</span></div>
+    <div class="nav">
+      <a href="index.html">Public .rh</a>
+      <a class="active" href="internal-v4.html">V4 internal</a>
+      <a href="phase1.html">Phase-1 tools</a>
+      <span id="netPill" class="pill">not connected</span>
+      <button id="connectBtn" class="secondary">Connect wallet</button>
+    </div>
+  </header>
+
+  <main>
+    <h1>Register, renew & resolve <span style="color:var(--accent)">.rh</span></h1>
+    <p class="sub">
+      Robinhood Mainnet (4663) · paid yearly rent · min 28 days · prices 0.01 / 0.005 / 0.001 ETH.
+      Single-transaction register (no commit–reveal). Logic in <code>sdk/</code> + <code>index-app.js</code>.
+    </p>
+
+    <div class="grid two">
+      <section class="card">
+        <h2>Resolve / expiry</h2>
+        <div class="field">
+          <label for="resolveName">Label (without .rh)</label>
+          <div class="row">
+            <input id="resolveName" placeholder="myname" />
+            <button id="resolveBtn">Lookup</button>
+          </div>
+          <div class="hint">3–32 chars · lowercase a–z · 0–9 · hyphen (not at ends)</div>
+        </div>
+        <div id="resolveOut" class="result">Enter a label and click Lookup.</div>
+      </section>
+
+      <section class="card">
+        <h2>Register (rental)</h2>
+        <div class="field">
+          <label for="regName">Label</label>
+          <input id="regName" placeholder="coolname" />
+        </div>
+        <div class="field">
+          <label for="regDuration">Duration</label>
+          <select id="regDuration">
+            <option value="28d">28 days (minimum)</option>
+            <option value="90d">90 days</option>
+            <option value="180d">180 days</option>
+            <option value="1y" selected>1 year</option>
+            <option value="2y">2 years</option>
+            <option value="5y">5 years</option>
+            <option value="10y">10 years (max)</option>
+          </select>
+          <div id="durationMeta" class="hint">Price is linear: yearly_rate × duration / 365 days</div>
+        </div>
+        <div class="row">
+          <button id="quoteBtn" class="secondary">Quote</button>
+          <button id="regBtn">Register</button>
+        </div>
+        <div class="prices" id="pricePills"></div>
+        <div id="regOut" class="result">Connect wallet to register. Quoting uses the public Robinhood RPC (not MetaMask).</div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:1rem">
+      <h2>Renew existing name</h2>
+      <div class="grid two">
+        <div class="field">
+          <label for="renewName">Label</label>
+          <input id="renewName" placeholder="myname" />
+        </div>
+        <div class="field">
+          <label for="renewDuration">Extend by</label>
+          <select id="renewDuration">
+            <option value="28d">28 days</option>
+            <option value="1y" selected>1 year</option>
+            <option value="2y">2 years</option>
+            <option value="5y">5 years</option>
+            <option value="10y">10 years</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <button id="renewQuoteBtn" class="secondary">Quote renew</button>
+        <button id="renewBtn">Renew</button>
+      </div>
+      <div id="renewOut" class="result">Active (non-expired) names only · legacy permanent names skip rent value changes but stay permanent.</div>
+    </section>
+
+    <section class="card" style="margin-top:1rem">
+      <h2>Network & contracts</h2>
+      <div id="infoOut" class="result">Loading…</div>
+    </section>
+
+    <footer>
+      Registry proxy <code id="proxyLine"></code><br />
+      Rental registrar <code id="regLine"></code><br />
+      Multisig <code id="msLine"></code><br />
+      Strategy: repo <code>FRONTEND_STRATEGY.md</code>. ES modules need HTTP:
+      <code>python3 -m http.server 5173</code> → <code>/frontend/</code><br />
+      Dual stack: Phase-1 ENS on <a href="phase1.html">phase1.html</a> (names do not auto-merge).
+    </footer>
+  </main>
+
+  <script type="module" src="./index-app.js"></script>
+</body>
+</html>

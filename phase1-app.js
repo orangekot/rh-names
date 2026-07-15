@@ -216,23 +216,33 @@ async function refreshInfo() {
 }
 
 function setConnectedUi() {
-  const disc = $("disconnectBtn");
+  const btn = $("connectBtn");
   if (!account) {
-    if ($("connectBtn")) {
-      $("connectBtn").textContent = "Connect wallet";
-      $("connectBtn").hidden = false;
+    if (btn) {
+      btn.textContent = "Connect wallet";
+      btn.hidden = false;
+      btn.classList.add("secondary");
+      btn.onmouseenter = null;
+      btn.onmouseleave = null;
+      btn.onclick = () => connect().catch((e) => alert(formatError(e, errOpts())));
     }
-    if (disc) disc.hidden = true;
     if ($("netPill")) {
       $("netPill").textContent = "not connected";
       $("netPill").classList.remove("ok");
     }
     return;
   }
-  if ($("connectBtn")) $("connectBtn").textContent = account.slice(0, 6) + "…" + account.slice(-4);
-  if (disc) disc.hidden = false;
+  const short = account.slice(0, 6) + "…" + account.slice(-4);
+  if (btn) {
+    btn.textContent = short;
+    btn.classList.remove("secondary");
+    // Hover behavior: show "Disconnect" on hover, address when not hovering
+    btn.onmouseenter = () => { btn.textContent = "Disconnect"; btn.classList.add("secondary"); };
+    btn.onmouseleave = () => { btn.textContent = short; btn.classList.remove("secondary"); };
+    btn.onclick = () => disconnect();
+  }
   if ($("netPill")) {
-    $("netPill").textContent = "Robinhood · " + account.slice(0, 6) + "…";
+    $("netPill").textContent = "Robinhood · " + short;
     $("netPill").classList.add("ok");
   }
 }
@@ -865,7 +875,6 @@ function wire() {
   }
 
   $("connectBtn").onclick = () => connect().catch((e) => alert(formatError(e, errOpts())));
-  if ($("disconnectBtn")) $("disconnectBtn").onclick = () => disconnect();
   $("resolveBtn").onclick = () => doResolve();
   $("quoteBtn").onclick = () => doQuote();
   $("commitBtn").onclick = () => doCommit();
