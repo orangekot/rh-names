@@ -23,12 +23,19 @@
       --bg: #0b0f14; --panel: #121821; --border: #1e2a38; --text: #e7eef7;
       --muted: #8fa3b8; --accent: #00c805; --header: #0b0f14cc;
     }
-    body { margin:0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
-    header { display:flex; justify-content:space-between; align-items:center; padding:.9rem 1.25rem; border-bottom:1px solid var(--border); background:var(--header); position:sticky; top:0; }
+    body { margin:0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:.9rem 1.25rem; border-bottom:1px solid var(--border); background:var(--header); position:sticky; top:0; gap:.75rem; flex-wrap:wrap; }
     a { color: var(--accent); text-decoration:none; font-weight:600; }
-    main { max-width:720px; margin:0 auto; padding:3rem 1rem; text-align:center; }
-    h1 { margin:0 0 .5rem; }
-    p { color: var(--muted); font-size:1.1rem; }
+    main { max-width:720px; margin:0 auto; padding:2rem 1rem 3rem; }
+    h1 { margin:0 0 .35rem; }
+    .lede { color: var(--muted); margin: 0 0 1.5rem; }
+    h2 { color:var(--accent); font-size:1.3rem; margin:1.5rem 0 .75rem; }
+    ul { list-style:none; padding:0; margin:0; }
+    li {
+      margin-bottom:.75rem; line-height:1.55; font-size:1.02rem; color:var(--muted);
+      padding-left: 1rem; border-left: 3px solid var(--border);
+    }
+    li strong { color: var(--text); }
   </style>
 </head>
 <body>
@@ -36,23 +43,29 @@
     <a href="./index.html">← rh.names</a>
     <nav>
       <a href="./roadmap.html">Roadmap</a> ·
+      <a href="./docs.html">Docs</a> ·
       <a href="./faq.html">FAQ</a> ·
       <a href="./rank.html">Rank</a>
     </nav>
   </header>
   <main>
     <h1>Roadmap</h1>
-    <div style="text-align:left; max-width:620px; margin:2rem auto;">
-      <h2 style="color:var(--accent); font-size:1.3rem; margin-bottom:1rem;">2026</h2>
-      <ul style="list-style:none; padding:0; line-height:1.8; font-size:1.05rem; color:var(--muted);">
-        <li style="margin-bottom:.75rem;">— Check for possible collaboration with main wallets for recognizing .rh addresses.</li>
-        <li style="margin-bottom:.75rem;">— Check possibility of launching Grails domain marketplace fork for Robinhood Chain.</li>
-        <li style="margin-bottom:.75rem;">— Check for possible collaboration with Robinhood Blockscout explorer for .rh ENS names recognition and resolving.</li>
-        <li style="margin-bottom:.75rem;">— Add more functionalities if requested by majority or good enough reasons.</li>
-        <li style="margin-bottom:.75rem;">— Consider updating for ENSv2 upgrade when available.</li>
-        <li style="margin-bottom:.75rem;">— Consider integrating more with ETH L1 ecosystem.</li>
-      </ul>
-    </div>
+    <p class="lede">
+      Public product is live. Next focus: make .rh names useful inside wallets and explorers.
+      Integrators start here: <a href="./docs.html">Docs</a>.
+    </p>
+
+    <h2>2026</h2>
+    <ul>
+      <li><strong>Integrator docs published</strong> — resolve / reverse / contracts / snippets for wallets &amp; explorers.</li>
+      <li>— Check for possible collaboration with main wallets for recognizing .rh addresses.</li>
+      <li>— Check possibility of launching Grails domain marketplace fork for Robinhood Chain.</li>
+      <li>— Check for possible collaboration with Robinhood Blockscout explorer for .rh ENS names recognition and resolving.</li>
+      <li>— Optional npm package of ABIs + resolve helpers.</li>
+      <li>— Add more functionalities if requested by majority or good enough reasons.</li>
+      <li>— Consider updating for ENSv2 upgrade when available.</li>
+      <li>— Consider integrating more with ETH L1 ecosystem (bridges / CCIP‑style visibility).</li>
+    </ul>
   </main>
 </body>
 </html>

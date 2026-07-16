@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Docs — Integrate .rh names</title>
+  <meta name="description" content="Developer documentation for resolving and integrating Robinhood Chain .rh names (ENS-compatible)." />
+  <link rel="icon" href="./assets/rh-logo.svg" type="image/svg+xml" />
+  <script>
+    try {
+      var t = localStorage.getItem("rh-theme");
+      if (t !== "light" && t !== "dark") {
+        t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  </script>
+  <style>
+    :root, [data-theme="light"] {
+      --bg: #f4f7fb; --panel: #ffffff; --border: #e2e8f0; --text: #0f172a;
+      --muted: #64748b; --accent: #00c805; --header: #fffffff2;
+      --code-bg: #0b1220; --code-fg: #e7eef7; --chip: #ecfdf3; --ok: #00a804;
+      --warn-bg: #fff7ed; --warn-border: #fdba74; --table-stripe: #f8fafc;
+    }
+    [data-theme="dark"] {
+      --bg: #0b0f14; --panel: #121821; --border: #1e2a38; --text: #e7eef7;
+      --muted: #8fa3b8; --accent: #00c805; --header: #0b0f14cc;
+      --code-bg: #060a10; --code-fg: #e7eef7; --chip: #0d1f12; --ok: #33d63a;
+      --warn-bg: #1a1208; --warn-border: #854d0e; --table-stripe: #0f1520;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.55;
+    }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .9rem 1.25rem; border-bottom: 1px solid var(--border);
+      background: var(--header); position: sticky; top: 0; z-index: 10;
+      backdrop-filter: blur(8px); gap: .75rem; flex-wrap: wrap;
+    }
+    a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    a:hover { text-decoration: underline; }
+    .layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 4rem;
+    }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { position: static !important; }
+    }
+    aside {
+      position: sticky; top: 4.2rem; align-self: start;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: .9rem 1rem; font-size: .9rem;
+    }
+    aside h2 { margin: 0 0 .55rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    aside ol { margin: 0; padding-left: 1.15rem; color: var(--muted); }
+    aside li { margin: .28rem 0; }
+    aside a { font-weight: 600; color: var(--text); }
+    aside a:hover { color: var(--accent); }
+    main h1 { margin: 0 0 .4rem; font-size: clamp(1.6rem, 3vw, 2.1rem); }
+    main .lede { color: var(--muted); margin: 0 0 1.25rem; max-width: 48rem; }
+    section {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.15rem 1.25rem 1.3rem;
+      margin-bottom: 1rem;
+    }
+    section h2 { margin: 0 0 .65rem; font-size: 1.15rem; }
+    section h3 { margin: 1.1rem 0 .45rem; font-size: 1rem; }
+    p { margin: .45rem 0; color: var(--text); }
+    .muted { color: var(--muted); }
+    ul, ol { margin: .4rem 0 .6rem; padding-left: 1.25rem; }
+    li { margin: .25rem 0; }
+    code, .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .86em;
+    }
+    code.inline {
+      background: var(--chip); color: var(--ok); padding: .1rem .35rem;
+      border-radius: 6px; border: 1px solid var(--border);
+    }
+    pre {
+      background: var(--code-bg); color: var(--code-fg);
+      border-radius: 12px; padding: .9rem 1rem; overflow-x: auto;
+      font-size: .82rem; line-height: 1.45; margin: .55rem 0 .75rem;
+      border: 1px solid #1e2a38;
+    }
+    pre code { color: inherit; font-size: inherit; }
+    table {
+      width: 100%; border-collapse: collapse; font-size: .9rem;
+      margin: .55rem 0 .8rem;
+    }
+    th, td {
+      border: 1px solid var(--border); padding: .5rem .6rem;
+      text-align: left; vertical-align: top;
+    }
+    th { background: var(--table-stripe); font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    tr:nth-child(even) td { background: var(--table-stripe); }
+    .badge {
+      display: inline-block; font-size: .72rem; font-weight: 700;
+      padding: .15rem .45rem; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--chip); color: var(--ok); margin-right: .25rem;
+    }
+    .badge.later { background: transparent; color: var(--muted); }
+    .badge.partial { color: #d97706; background: #fff7ed; border-color: #fdba74; }
+    [data-theme="dark"] .badge.partial { background: #1a1208; border-color: #854d0e; color: #fbbf24; }
+    .callout {
+      border: 1px solid var(--warn-border); background: var(--warn-bg);
+      border-radius: 12px; padding: .75rem .9rem; margin: .7rem 0;
+      font-size: .92rem;
+    }
+    .addr { word-break: break-all; font-family: ui-monospace, Menlo, monospace; font-size: .82rem; }
+    .copy-row { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; margin: .35rem 0; }
+    button.copy {
+      background: var(--accent); color: #041206; border: 0; border-radius: 8px;
+      font-weight: 700; padding: .28rem .55rem; cursor: pointer; font-size: .75rem;
+    }
+    button.copy.secondary {
+      background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    }
+    footer {
+      max-width: 1100px; margin: 0 auto; padding: 0 1rem 2.5rem;
+      color: var(--muted); font-size: .85rem;
+    }
+    .toc-note { font-size: .8rem; color: var(--muted); margin-top: .6rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="./index.html">← rh.names</a>
+    <nav>
+      <a href="./roadmap.html">Roadmap</a> ·
+      <a href="./docs.html">Docs</a> ·
+      <a href="./faq.html">FAQ</a> ·
+      <a href="./rank.html">Rank</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <h2>On this page</h2>
+      <ol>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#status">What works today</a></li>
+        <li><a href="#chain">Chain config</a></li>
+        <li><a href="#contracts">Contracts</a></li>
+        <li><a href="#resolve">Forward resolve</a></li>
+        <li><a href="#reverse">Reverse resolve</a></li>
+        <li><a href="#text">Text records</a></li>
+        <li><a href="#snippets">Code snippets</a></li>
+        <li><a href="#register">Register (wallets)</a></li>
+      </ol>
+      <p class="toc-note">Public product: Phase‑1 ENS stack on Robinhood Chain.</p>
+    </aside>
+
+    <main>
+      <h1>Integrate <span style="color:var(--accent)">.rh</span> names</h1>
+      <p class="lede">
+        Documentation for wallets, explorers, dApps, and indexers that want to resolve
+        <strong>Robinhood Chain usernames</strong> ending in <code class="inline">.rh</code>
+        — similar in spirit to ENS docs, tailored to our live Phase‑1 contracts.
+      </p>
+
+      <section id="overview">
+        <h2>1. Overview</h2>
+        <p>
+          <strong>.rh</strong> is an ENS‑compatible name system on
+          <strong>Robinhood Mainnet (chainId 4663)</strong>. Names are rented (not permanent),
+          owned as ERC‑721 NFTs on the Base Registrar, and resolve through a standard ENS registry + resolver.
+        </p>
+        <ul>
+          <li><strong>Forward:</strong> <code class="inline">alice.rh</code> → Ethereum address (coin type 60)</li>
+          <li><strong>Reverse / primary:</strong> <code class="inline">0x…</code> → preferred <code class="inline">alice.rh</code></li>
+          <li><strong>Text:</strong> avatar, url, description, socials (EIP‑634 keys)</li>
+        </ul>
+        <p class="muted">
+          End users register at
+          <a href="https://orangekot.github.io/rh-names/" target="_blank" rel="noopener">rh.names</a>.
+          This page is for <em>builders</em> integrating the stack.
+        </p>
+      </section>
+
+      <section id="status">
+        <h2>2. What already works (live)</h2>
+        <table>
+          <thead>
+            <tr><th>Capability</th><th>Status</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ENSRegistry + BaseRegistrar (ERC‑721)</td>
+              <td><span class="badge">DONE</span></td>
+              <td><code class="inline">.rh</code> node owned by Base Registrar</td>
+            </tr>
+            <tr>
+              <td>Commit → register / renew (rental)</td>
+              <td><span class="badge">DONE</span></td>
+              <td>Min 28 days; length‑tier ETH pricing + duration discounts</td>
+            </tr>
+            <tr>
+              <td>Resolver: <code class="inline">addr</code> / multicoin / <code class="inline">name</code> / <code class="inline">text</code></td>
+              <td><span class="badge">DONE</span></td>
+              <td>Default resolver on new registrations</td>
+            </tr>
+            <tr>
+              <td>ReverseRegistrar primary names</td>
+              <td><span class="badge">DONE</span></td>
+              <td><code class="inline">setName("alice.rh")</code> from wallet</td>
+            </tr>
+            <tr>
+              <td>Public RPC + Blockscout explorer</td>
+              <td><span class="badge">DONE</span></td>
+              <td>Standard EVM tooling</td>
+            </tr>
+            <tr>
+              <td>Browser SDK helpers (this site)</td>
+              <td><span class="badge">DONE</span></td>
+              <td><code class="inline">frontend/sdk/</code> ES modules</td>
+            </tr>
+            <tr>
+              <td>Integrator docs (this page)</td>
+              <td><span class="badge">DONE</span></td>
+              <td>Addresses, flows, snippets</td>
+            </tr>
+            <tr>
+              <td>Native wallet / Blockscout UI support</td>
+              <td><span class="badge later">PARTNER</span></td>
+              <td>Needs each product to wire RH registry (see checklist)</td>
+            </tr>
+            <tr>
+              <td>L1 ENS / CCIP universal resolution</td>
+              <td><span class="badge later">LATER</span></td>
+              <td>Not required for chain‑native .rh</td>
+            </tr>
+            <tr>
+              <td>npm package / official ABI artifact drop</td>
+              <td><span class="badge later">TODAY+</span></td>
+              <td>Snippets + addresses here; npm optional next</td>
+            </tr>
+            <tr>
+              <td>External security audit</td>
+              <td><span class="badge later">LATER</span></td>
+              <td>Stack is live; formal audit not yet published</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="chain">
+        <h2>3. Chain configuration</h2>
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Chain name</td><td>Robinhood Mainnet</td></tr>
+            <tr><td>Chain ID</td><td><code class="inline">4663</code> (<code class="inline">0x1237</code>)</td></tr>
+            <tr><td>RPC</td><td class="addr"><a href="https://rpc.mainnet.chain.robinhood.com" target="_blank" rel="noopener">https://rpc.mainnet.chain.robinhood.com</a></td></tr>
+            <tr><td>Explorer</td><td class="addr"><a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">https://robinhoodchain.blockscout.com</a></td></tr>
+            <tr><td>Native currency</td><td>ETH (18 decimals)</td></tr>
+            <tr><td>TLD</td><td><code class="inline">rh</code></td></tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <strong>Read path tip:</strong> always query the <em>public</em> Robinhood RPC for resolution.
+          Do not rely on a wallet’s injected RPC for custom L2 <code class="inline">eth_call</code>s — some return empty reverts.
+        </div>
+      </section>
+
+      <section id="contracts">
+        <h2>4. Canonical contracts (Phase‑1 public product)</h2>
+        <table>
+          <thead><tr><th>Role</th><th>Address</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>ENS Registry</td>
+              <td class="addr"><a href="https://robinhoodchain.blockscout.com/address/0xF3fcF2aeef2b49F33C9882C28b526558C675Df5a" target="_blank" rel="noopener">0xF3fcF2aeef2b49F33C9882C28b526558C675Df5a</a></td>
+            </tr>
+            <tr>
+              <td>Base Registrar (ERC‑721)</td>
+              <td class="addr"><a href="https://robinhoodchain.blockscout.com/address/0x2C66b1F37A00cb22828637301F31c85e180f1Aa0" target="_blank" rel="noopener">0x2C66b1F37A00cb22828637301F31c85e180f1Aa0</a></td>
+            </tr>
+            <tr>
+              <td>Registrar Controller (v3 pricing)</td>
+              <td class="addr"><a href="https://robinhoodchain.blockscout.com/address/0xf3C5D3a85a1646F57B449Adc401347E003a3aF92" target="_blank" rel="noopener">0xf3C5D3a85a1646F57B449Adc401347E003a3aF92</a></td>
+            </tr>
+            <tr>
+              <td>Price Oracle</td>
+              <td class="addr"><a href="https://robinhoodchain.blockscout.com/address/0xd19177f86bACa66d5bDBa6b3932B6E81E530605D" target="_blank" rel="noopener">0xd19177f86bACa66d5bDBa6b3932B6E81E530605D</a></td>
+            </tr>
+            <tr>
+              <td>Public / Addr Resolver (default)</td>
+              <td class="addr"><a href="https://robinhoodchain.blockscout.com/address/0x20450F13747039621b87F79AAc3144f86a6C78C1" target="_blank" rel="noopener">0x20450F13747039621b87F79AAc3144f86a6C78C1</a></td>
+            </tr>
+            <tr>
+              <td>Reverse Registrar</td>
+              <td class="addr"><a href="https://robinhoodchain.blockscout.com/address/0xF2Cc3fB65ea90162B0556519022D84CfeD3c323C" target="_blank" rel="noopener">0xF2Cc3fB65ea90162B0556519022D84CfeD3c323C</a></td>
+            </tr>
+            <tr>
+              <td>Admin Multisig (2‑of‑3)</td>
+              <td class="addr"><a href="https://robinhoodchain.blockscout.com/address/0x1ecEEb6B3898b9dA56345212d0bB78836f14CdeD" target="_blank" rel="noopener">0x1ecEEb6B3898b9dA56345212d0bB78836f14CdeD</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="resolve">
+        <h2>5. Forward resolution — name → address</h2>
+        <p>Same mental model as ENS:</p>
+        <ol>
+          <li>Normalize label (lowercase, no trailing <code class="inline">.rh</code> in registry ops).</li>
+          <li><code class="inline">node = namehash("label.rh")</code></li>
+          <li><code class="inline">resolver = ENS.resolver(node)</code></li>
+          <li><code class="inline">addr = resolver.addr(node)</code> (EIP‑137) or multicoin <code class="inline">addr(node, 60)</code></li>
+        </ol>
+        <h3>Minimal ABI fragments</h3>
+<pre><code>// ENSRegistry
+function resolver(bytes32 node) view returns (address)
+
+// Resolver
+function addr(bytes32 node) view returns (address)
+function addr(bytes32 node, uint256 coinType) view returns (bytes)
+function text(bytes32 node, string key) view returns (string)
+function name(bytes32 node) view returns (string)</code></pre>
+        <h3>cast (CLI)</h3>
+<pre><code>export RPC=https://rpc.mainnet.chain.robinhood.com
+export ENS=0xF3fcF2aeef2b49F33C9882C28b526558C675Df5a
+
+NODE=$(cast namehash alice.rh)
+RESOLVER=$(cast call $ENS "resolver(bytes32)(address)" $NODE --rpc-url $RPC)
+cast call $RESOLVER "addr(bytes32)(address)" $NODE --rpc-url $RPC</code></pre>
+      </section>
+
+      <section id="reverse">
+        <h2>6. Reverse resolution — address → primary name</h2>
+        <p>
+          Users set a primary name so wallets/explorers can show <code class="inline">alice.rh</code>
+          instead of a raw <code class="inline">0x…</code> address.
+        </p>
+        <ol>
+          <li>User owns <code class="inline">alice.rh</code> and points its resolver <code class="inline">addr</code> at their wallet (usually done at register).</li>
+          <li>User calls ReverseRegistrar <code class="inline">setName("alice.rh")</code> from that wallet.</li>
+          <li>Integrators read reverse: compute reverse node for the address, load its resolver, call <code class="inline">name(node)</code>.</li>
+        </ol>
+        <h3>Set primary (user write)</h3>
+<pre><code>// ReverseRegistrar
+function setName(string name) returns (bytes32)
+function node(address addr) pure returns (bytes32)
+function defaultResolver() view returns (address)</code></pre>
+<pre><code>REVERSE=0xF2Cc3fB65ea90162B0556519022D84CfeD3c323C
+# from the user's wallet (signing tx):
+cast send $REVERSE "setName(string)" "alice.rh" --rpc-url $RPC</code></pre>
+        <h3>Read primary for an address</h3>
+<pre><code>// 1) reverse node for address
+REV_NODE=$(cast call $REVERSE "node(address)(bytes32)" 0xUser… --rpc-url $RPC)
+// 2) resolver on that reverse node (often default resolver)
+RES=$(cast call $ENS "resolver(bytes32)(address)" $REV_NODE --rpc-url $RPC)
+// 3) EIP-181 name
+cast call $RES "name(bytes32)(string)" $REV_NODE --rpc-url $RPC</code></pre>
+        <div class="callout">
+          <strong>Wallet send‑to flow:</strong> when the user types <code class="inline">alice.rh</code> in a transfer field,
+          resolve forward → <code class="inline">addr</code> and send to that address. When displaying history,
+          reverse‑resolve the counterparty address for a friendlier primary name (if set).
+        </div>
+      </section>
+
+      <section id="text">
+        <h2>7. Text records (profiles)</h2>
+        <p>Common keys used by the public UI (EIP‑634 style):</p>
+        <table>
+          <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code class="inline">url</code></td><td>Website</td></tr>
+            <tr><td><code class="inline">avatar</code></td><td>Image URL or <code class="inline">ipfs://…</code></td></tr>
+            <tr><td><code class="inline">description</code></td><td>Bio</td></tr>
+            <tr><td><code class="inline">com.twitter</code></td><td>X / Twitter handle</td></tr>
+            <tr><td><code class="inline">com.github</code></td><td>GitHub</td></tr>
+            <tr><td><code class="inline">email</code></td><td>Email</td></tr>
+          </tbody>
+        </table>
+<pre><code>cast call $RESOLVER "text(bytes32,string)(string)" $NODE "avatar" --rpc-url $RPC</code></pre>
+      </section>
+
+      <section id="snippets">
+        <h2>8. Code snippets</h2>
+        <h3>ethers v6</h3>
+<pre><code>import { ethers } from "ethers";
+
+const RPC = "https://rpc.mainnet.chain.robinhood.com";
+const ENS = "0xF3fcF2aeef2b49F33C9882C28b526558C675Df5a";
+const provider = new ethers.JsonRpcProvider(RPC, 4663, { staticNetwork: true });
+
+const ens = new ethers.Contract(ENS, [
+  "function resolver(bytes32) view returns (address)",
+], provider);
+
+const resolverAbi = [
+  "function addr(bytes32) view returns (address)",
+  "function text(bytes32,string) view returns (string)",
+  "function name(bytes32) view returns (string)",
+];
+
+export async function resolveRh(name) {
+  const full = name.endsWith(".rh") ? name.toLowerCase() : `${name.toLowerCase()}.rh`;
+  const node = ethers.namehash(full);
+  const resolverAddr = await ens.resolver(node);
+  if (resolverAddr === ethers.ZeroAddress) return null;
+  const resolver = new ethers.Contract(resolverAddr, resolverAbi, provider);
+  const addr = await resolver.addr(node);
+  return addr === ethers.ZeroAddress ? null : addr;
+}
+
+export async function reverseRh(address) {
+  const reverse = new ethers.Contract(
+    "0xF2Cc3fB65ea90162B0556519022D84CfeD3c323C",
+    ["function node(address) pure returns (bytes32)"],
+    provider,
+  );
+  const revNode = await reverse.node(address);
+  const resolverAddr = await ens.resolver(revNode);
+  if (resolverAddr === ethers.ZeroAddress) return null;
+  const resolver = new ethers.Contract(resolverAddr, resolverAbi, provider);
+  const name = await resolver.name(revNode);
+  return name || null;
+}</code></pre>
+        <h3>viem</h3>
+<pre><code>import { createPublicClient, http, namehash, getAddress } from "viem";
+
+const client = createPublicClient({
+  chain: {
+    id: 4663,
+    name: "Robinhood",
+    nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+    rpcUrls: { default: { http: ["https://rpc.mainnet.chain.robinhood.com"] } },
+  },
+  transport: http(),
+});
+
+const ensAbi = [{
+  name: "resolver", type: "function", stateMutability: "view",
+  inputs: [{ name: "node", type: "bytes32" }],
+  outputs: [{ type: "address" }],
+}];
+const addrAbi = [{
+  name: "addr", type: "function", stateMutability: "view",
+  inputs: [{ name: "node", type: "bytes32" }],
+  outputs: [{ type: "address" }],
+}];
+
+export async function resolveRh(labelOrName) {
+  const full = labelOrName.endsWith(".rh")
+    ? labelOrName.toLowerCase()
+    : `${labelOrName.toLowerCase()}.rh`;
+  const node = namehash(full);
+  const resolver = await client.readContract({
+    address: "0xF3fcF2aeef2b49F33C9882C28b526558C675Df5a",
+    abi: ensAbi,
+    functionName: "resolver",
+    args: [node],
+  });
+  if (resolver === "0x0000000000000000000000000000000000000000") return null;
+  const addr = await client.readContract({
+    address: resolver,
+    abi: addrAbi,
+    functionName: "addr",
+    args: [node],
+  });
+  return addr === "0x0000000000000000000000000000000000000000"
+    ? null
+    : getAddress(addr);
+}</code></pre>
+        <p class="muted">
+          Full fragments used by the public site:
+          <a href="./sdk/abis.js" target="_blank" rel="noopener"><code class="inline">sdk/abis.js</code></a>,
+          client helpers:
+          <a href="./sdk/phase1-client.js" target="_blank" rel="noopener"><code class="inline">sdk/phase1-client.js</code></a>,
+          drop-in resolve helpers:
+          <a href="./sdk/resolve.js" target="_blank" rel="noopener"><code class="inline">sdk/resolve.js</code></a>
+          (<code class="inline">resolveRhAddress</code>, <code class="inline">reverseRhName</code>, <code class="inline">resolveRhText</code>).
+        </p>
+      </section>
+
+      <section id="register">
+        <h2>9. Registration (for full wallet support)</h2>
+        <p>Users can register from the public site. Wallets that want in‑app registration:</p>
+        <ol>
+          <li><code class="inline">controller.available(label)</code> / <code class="inline">valid(label)</code></li>
+          <li><code class="inline">rentPrice(label, durationSeconds)</code> → pay <code class="inline">base + premium</code></li>
+          <li><code class="inline">commitment = makeCommitment(label, owner, secret)</code></li>
+          <li><code class="inline">commit(commitment)</code> → wait <code class="inline">minCommitmentAge</code> (≥ 60s)</li>
+          <li><code class="inline">register(label, owner, duration, secret, resolver)</code> payable</li>
+          <li>Optional: ReverseRegistrar <code class="inline">setName("label.rh")</code></li>
+        </ol>
+        <div class="callout">
+          <strong>ABI note:</strong> our slim controller commitment is
+          <code class="inline">keccak256(abi.encodePacked(labelhash, owner, secret))</code>
+          — <em>not</em> the L1 ETHRegistrarController <code class="inline">Registration</code> struct.
+          Do not drop in ensjs register helpers without adapting the hash.
+        </div>
+        <p>
+          Pricing (v3): yearly <strong>0.03 / 0.01 / 0.005 ETH</strong> for 3 / 4 / 5+ character labels,
+          plus duration discounts (+4% off per full 30 days past the 28‑day floor, max 48%).
+          Min registration: <strong>28 days</strong>.
+        </p>
+        <p class="muted">
+          Questions or integration help: open an issue on
+          <a href="https://github.com/orangekot/rh-names" target="_blank" rel="noopener">orangekot/rh-names</a>
+          or use contact links on the <a href="./index.html">main site</a>.
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    rh.names docs · Robinhood Chain 4663 · Phase‑1 ENS product · Addresses re‑verified live 2026‑07‑16
+  </footer>
+</body>
+</html>

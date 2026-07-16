@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FAQ — rh.names</title>
   <link rel="icon" href="./assets/rh-logo.svg" type="image/svg+xml" />
-  <script src="./theme.js" type="module"></script>
   <script>
     try {
       var t = localStorage.getItem("rh-theme");
@@ -24,12 +23,19 @@
       --bg: #0b0f14; --panel: #121821; --border: #1e2a38; --text: #e7eef7;
       --muted: #8fa3b8; --accent: #00c805; --header: #0b0f14cc;
     }
-    body { margin:0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
-    header { display:flex; justify-content:space-between; align-items:center; padding:.9rem 1.25rem; border-bottom:1px solid var(--border); background:var(--header); position:sticky; top:0; }
+    body { margin:0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:.9rem 1.25rem; border-bottom:1px solid var(--border); background:var(--header); position:sticky; top:0; gap:.75rem; flex-wrap:wrap; }
     a { color: var(--accent); text-decoration:none; font-weight:600; }
-    main { max-width:720px; margin:0 auto; padding:3rem 1rem; text-align:center; }
-    h1 { margin:0 0 .5rem; }
-    p { color: var(--muted); font-size:1.1rem; }
+    main { max-width:720px; margin:0 auto; padding:2rem 1rem 3rem; }
+    h1 { margin:0 0 .35rem; }
+    .lede { color: var(--muted); margin: 0 0 1.5rem; }
+    details {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 12px; padding: .85rem 1rem; margin-bottom: .65rem;
+    }
+    summary { cursor: pointer; font-weight: 700; }
+    details p { margin: .65rem 0 0; color: var(--muted); }
+    code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; }
   </style>
 </head>
 <body>
@@ -37,13 +43,85 @@
     <a href="./index.html">← rh.names</a>
     <nav>
       <a href="./roadmap.html">Roadmap</a> ·
+      <a href="./docs.html">Docs</a> ·
       <a href="./faq.html">FAQ</a> ·
       <a href="./rank.html">Rank</a>
     </nav>
   </header>
   <main>
     <h1>FAQ</h1>
-    <p>TBA</p>
+    <p class="lede">Quick answers for .rh name holders. Builders: see <a href="./docs.html">Docs</a>.</p>
+
+    <details open>
+      <summary>What is a .rh name?</summary>
+      <p>
+        A human‑readable username on Robinhood Chain (for example <code>alice.rh</code>).
+        It can point to your wallet address and show a primary name in apps that integrate our ENS‑compatible contracts.
+      </p>
+    </details>
+
+    <details>
+      <summary>Is a name permanent?</summary>
+      <p>
+        No — names are <strong>rented</strong>. Minimum registration is 28 days. You can renew before expiry.
+        Longer durations get stepped discounts (up to 48% off).
+      </p>
+    </details>
+
+    <details>
+      <summary>How much does it cost?</summary>
+      <p>
+        Yearly rent (before duration discounts): <strong>0.03 / 0.01 / 0.005 ETH</strong> for 3 / 4 / 5+ character labels.
+        Live quotes on the home page and during registration use the on‑chain price oracle.
+      </p>
+    </details>
+
+    <details>
+      <summary>Why do I commit before register?</summary>
+      <p>
+        Commit‑reveal reduces front‑running. You commit a secret, wait about a minute, then register.
+        Keep the same browser/device until register finishes so your secret is available.
+      </p>
+    </details>
+
+    <details>
+      <summary>What is a primary name?</summary>
+      <p>
+        The .rh name you choose to represent your wallet address (reverse record).
+        Set it from <strong>My names</strong> after you own a name. Wallets and explorers that support .rh can then show your name instead of a raw 0x address.
+      </p>
+    </details>
+
+    <details>
+      <summary>Can I receive transfers to alice.rh?</summary>
+      <p>
+        Yes — once a wallet or app resolves .rh names. They look up the name on Robinhood Chain and send to the address it points to.
+        Until a given wallet adds support, paste your 0x address as usual. Integrator details: <a href="./docs.html">Docs</a>.
+      </p>
+    </details>
+
+    <details>
+      <summary>Which chain do I need?</summary>
+      <p>
+        Robinhood Mainnet, chain ID <strong>4663</strong>. Add the network in MetaMask/Brave if needed
+        (RPC <code>https://rpc.mainnet.chain.robinhood.com</code>).
+      </p>
+    </details>
+
+    <details>
+      <summary>Are names NFTs?</summary>
+      <p>
+        Yes. Ownership is an ERC‑721 on the Base Registrar. The registry + resolver handle name data and resolution.
+      </p>
+    </details>
+
+    <details>
+      <summary>Is this the same as ENS .eth on Ethereum?</summary>
+      <p>
+        Same family of contracts (registry, registrar, resolver, reverse), but deployed on Robinhood Chain for the <code>.rh</code> TLD.
+        It is not an L1 .eth name and is not automatically visible on Ethereum mainnet ENS apps unless we add cross‑chain bridges later.
+      </p>
+    </details>
   </main>
 </body>
 </html>
